@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-env-file = "notebooks/.env"
 dependencies = [
     "cartopy>=0.25.0",
     "duckdb==1.4.1",
@@ -43,12 +42,6 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/co2sat"]
