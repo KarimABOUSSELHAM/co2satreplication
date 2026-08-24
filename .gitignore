@@ -1,0 +1,17 @@
+data/
+*.parquet
+*.nc
+*.h5
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.env
+.DS_Store
+wandb/
+lightning_logs/
+.ruff_cache/
+.pytest_cache/
+figures/radiance_band1.html
+figures/radiance_with_hoover_dam.html
+figures/radiance_with_hoover_dam_on_the_map.html
+notebooks/05_eda.ipynb
