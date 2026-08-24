@@ -51,4 +51,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/co2sat"]

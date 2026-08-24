@@ -1,3 +1,4 @@
+notebooks/data/raw/epa/
 /data/
 *.parquet
 *.nc
