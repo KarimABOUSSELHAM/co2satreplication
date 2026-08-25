@@ -186,9 +186,8 @@ data/raw/ goes16_test/
       Example of transformation is displayed in notebook `07_coordinates_transformation.ipynb`
 - [ ] Convert all images to html files in order to upload notebooks to github with ease
 
-## Thursday 04/06/2026
+## Tuesday 25/08/2026
 
-- [ ] Scale for one single Plant, single Day, All Bands of the satellite
-  - [ ] File Naming Function
-  - [ ] Pixel Extraction Function
-  - [ ] Single Plant, Single Day, All Bands × All Hours
+- [x] Product decision revised: ABI-L2-MCMIPC replaces ABI-L1b-RadC for the production pipeline.
+      Rationale: MCMIPC packs all 16 bands in one file per scan (12 files/hour vs 192), cutting S3 fetches ~16x (~39K vs ~624K for the full study).
+       Values are reflectance factor (bands 1-6) and brightness temperature (bands 7-16), matching the paper's "reflectance band data" wording.
