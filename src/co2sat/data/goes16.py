@@ -6,6 +6,9 @@ locating scans on the NOAA S3 bucket, transforming plant coordinates to the ABI 
 """
 
 from __future__ import annotations
+import logging as logger
+
+import tempfile
 import datetime as dt
 import re
 import s3fs
@@ -13,6 +16,7 @@ import xarray as xr
 from pyproj import Proj
 import numpy as np
 
+logger = logger.getLogger(__name__)
 BUCKET_PREFIX = "noaa-goes16/ABI-L2-MCMIPC"
 
 _MCMIP_FILENAME_RE = re.compile(
@@ -86,17 +90,20 @@ def extract_bands_at_point(
     fs: s3fs.S3FileSystem, file_path: str, lon: float, lat: float
 ) -> dict[int, float]:
     """Open one MCMIPC file, return {band: value} at (lon, lat) for all 16 bands."""
-    with fs.open(file_path, "rb") as f:
-        ds = xr.open_dataset(f, engine="h5netcdf")
+
+    with tempfile.NamedTemporaryFile(suffix=".nc") as tmp:
+        fs.get(file_path, tmp.name)  # one sequential bulk download
+        ds = xr.open_dataset(tmp.name)  # local read, default engine
         proj = make_goes_projection(ds)
         h = ds["goes_imager_projection"].attrs["perspective_point_height"]
         x, y = lonlat_to_xy(lon, lat, proj, h)
-        # Find the nearest pixel in the x/y grid
         x_idx = int(np.abs(ds["x"].values - x).argmin())
         y_idx = int(np.abs(ds["y"].values - y).argmin())
-        return {
+        result = {
             b: float(ds[f"CMI_C{b:02d}"].values[y_idx, x_idx]) for b in range(1, 17)
         }
+        ds.close()
+        return result
 
 
 def extract_day_matrix(
@@ -112,6 +119,6 @@ def extract_day_matrix(
         try:
             for band, v in extract_bands_at_point(fs, scan_path, lon, lat).items():
                 matrix[band - 1, hour] = v
-        except Exception:
-            continue  # skip this hour if there's an error reading the file
+        except Exception as e:
+            logger.error(f"Extraction failed for {target}: {type(e).__name__} – {e}")
     return matrix
