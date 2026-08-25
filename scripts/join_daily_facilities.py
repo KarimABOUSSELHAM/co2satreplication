@@ -1,4 +1,4 @@
-from src.co2sat.utils import project_root
+from co2sat.utils import project_root
 import pandas as pd
 from loguru import logger
 from src.co2sat.data.epa import categorize_fuel
