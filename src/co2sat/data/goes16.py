@@ -119,6 +119,11 @@ def extract_day_matrix(
         try:
             for band, v in extract_bands_at_point(fs, scan_path, lon, lat).items():
                 matrix[band - 1, hour] = v
-        except Exception as e:
-            logger.error(f"Extraction failed for {target}: {type(e).__name__} – {e}")
+        except (OSError, ValueError, KeyError, IndexError) as e:
+            logger.error(
+                "Extraction failed for %s: %s – %s",
+                target,
+                type(e).__name__,
+                e,
+            )
     return matrix
