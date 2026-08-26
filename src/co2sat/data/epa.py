@@ -209,7 +209,7 @@ def compute_fuel_ratios(df_units: pd.DataFrame) -> pd.DataFrame:
     cap = (
         df.groupby(["facility_id", "fuel_category"])["capacity_mw"]
         .sum()
-        .unstack(fill_value=0.0)
+        .unstack(fill_value=0)
     )
     for cat in ["coal", "gas", "oil", "other"]:
         if cat not in cap.columns:

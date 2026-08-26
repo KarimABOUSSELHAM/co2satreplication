@@ -22,8 +22,13 @@ def main() -> None:
     if not api_key:
         raise RuntimeError("Missing API_KEY in environment")
     listing_url = os.environ.get("BASE")
+    if listing_url is None:
+        raise RuntimeError("Missing BASE in environment")
     logger.info(f"The listing URL is {listing_url}")
-    bulk_base = os.environ.get("BULK").rstrip("/") + "/"
+    bulk_base = os.environ.get("BULK")
+    if bulk_base is None:
+        raise RuntimeError("Missing BULK in environment")
+    bulk_base = bulk_base.rstrip("/") + "/"
     logger.info(f"The bulk base URL is {bulk_base}")
 
     out_dir = Path("data/raw/epa_facilities")

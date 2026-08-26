@@ -6,17 +6,17 @@ locating scans on the NOAA S3 bucket, transforming plant coordinates to the ABI 
 """
 
 from __future__ import annotations
-import logging as logger
 
 import tempfile
 import datetime as dt
 import re
-import s3fs
+import logging
 import xarray as xr
 from pyproj import Proj
 import numpy as np
+import s3fs
 
-logger = logger.getLogger(__name__)
+logger = logging.getLogger(__name__)
 BUCKET_PREFIX = "noaa-goes16/ABI-L2-MCMIPC"
 
 _MCMIP_FILENAME_RE = re.compile(

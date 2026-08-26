@@ -599,6 +599,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "netcdf4" },
     { name = "pandas" },
+    { name = "pandas-stubs" },
     { name = "plotly" },
     { name = "pyarrow" },
     { name = "pydantic" },
@@ -609,6 +610,7 @@ dependencies = [
     { name = "seaborn" },
     { name = "shapely" },
     { name = "tqdm" },
+    { name = "tqdm-stubs" },
     { name = "xarray" },
     { name = "zarr" },
 ]
@@ -637,6 +639,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.9" },
     { name = "netcdf4", specifier = ">=1.7.4" },
     { name = "pandas", specifier = ">=3.0.3" },
+    { name = "pandas-stubs", specifier = ">=3.0.5.260730" },
     { name = "plotly", specifier = ">=6.7.0" },
     { name = "pyarrow", specifier = ">=24.0.0" },
     { name = "pydantic", specifier = ">=2.13.4" },
@@ -647,6 +650,7 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "shapely", specifier = ">=2.1.2" },
     { name = "tqdm", specifier = ">=4.67.3" },
+    { name = "tqdm-stubs", specifier = ">=0.2.1" },
     { name = "xarray", specifier = ">=2026.4.0" },
     { name = "zarr", specifier = ">=3.2.1" },
 ]
@@ -2373,6 +2377,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pandas-stubs"
+version = "3.0.5.260730"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/d2/dea4a3a56b7b5f69c5fbca9f14625fcf28e1a39a657e9833d4a10bcac593/pandas_stubs-3.0.5.260730.tar.gz", hash = "sha256:f70a232c57d93a5a2c81f8a53953e10891a5374bc92652277deb325e2e4d0ff3", size = 114631, upload-time = "2026-07-30T14:31:42.271Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/c2/959caec5c46f484b5f8bb6def4b0cf7a45ba6acda26f12b75142d98cc5ae/pandas_stubs-3.0.5.260730-py3-none-any.whl", hash = "sha256:60e90e3e1eda6937e337e243cbe6217e151c11137cd7eddf832af537c7310bfd", size = 174807, upload-time = "2026-07-30T14:31:41.17Z" },
+]
+
+[[package]]
 name = "pandocfilters"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3515,6 +3531,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
+]
+
+[[package]]
+name = "tqdm-stubs"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/4c/0ed243c8d1693ca09e5abf99ef9e1f253c9e2c6e093c9841c2e4e3fbdf24/tqdm-stubs-0.2.1.tar.gz", hash = "sha256:af7044737de561b2816b8b3fae1cb8af024ad0337311b9fc22d121cd3ab5c8e5", size = 4741, upload-time = "2022-07-01T05:58:08.701Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/47/c5035d51e717d1c3c531dd97c8c7a4b562f09c898a8af262057d678d2e95/tqdm_stubs-0.2.1-py3-none-any.whl", hash = "sha256:cb794e89042aac254a77a4322a16f18dfd1d0d2ebe5b39cc4d3e6513fed00251", size = 4019, upload-time = "2022-07-01T05:58:10.12Z" },
 ]
 
 [[package]]
