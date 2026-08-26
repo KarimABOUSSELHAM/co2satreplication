@@ -188,6 +188,15 @@ data/raw/ goes16_test/
 
 ## Tuesday 25/08/2026
 
-- [x] Product decision revised: ABI-L2-MCMIPC replaces ABI-L1b-RadC for the production pipeline.
-      Rationale: MCMIPC packs all 16 bands in one file per scan (12 files/hour vs 192), cutting S3 fetches ~16x (~39K vs ~624K for the full study).
-       Values are reflectance factor (bands 1-6) and brightness temperature (bands 7-16), matching the paper's "reflectance band data" wording.
+## Tuesday 26/08/2026
+
+- [x] Sub-Phase 2.2: single plant-day extraction validated (W A Parish 16×24
+      matrix, physics checks: diurnal arc, water-vapor band ordering, thermal lag)
+- [x] Sub-Phase 2.3: batched resumable extractor (one file open serves all
+      1,158 plants; verified numerically identical to single-plant path)
+- [x] Sub-Phase 2.4: full extraction EXECUTED on Google Colab.
+      Local pilot: 24 scan-hours in 34.5 min (bandwidth-bound ~6.5 Mbps)
+      → projected 85 h locally → moved compute to the data.
+      Colab run: 3,251 done + 12 missing (GOES outages) + 0 failed in 81 min,
+      4 processes (ProcessPoolExecutor after HDF5 thread-safety segfault
+      with threads). Cache: 3,252 parquets, merged locally.

@@ -17,3 +17,5 @@ figures/radiance_with_hoover_dam.html
 figures/radiance_with_hoover_dam_on_the_map.html
 notebooks/05_eda.ipynb
 *Zone.Identifier
+/logs/
+*.csv

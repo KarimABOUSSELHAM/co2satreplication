@@ -15,6 +15,7 @@ import xarray as xr
 from pyproj import Proj
 import numpy as np
 import s3fs
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 BUCKET_PREFIX = "noaa-goes16/ABI-L2-MCMIPC"
@@ -127,3 +128,34 @@ def extract_day_matrix(
                 e,
             )
     return matrix
+
+
+def extract_all_plants_for_scan(
+    fs: s3fs.S3FileSystem, file_path: str, plants: pd.DataFrame
+) -> pd.DataFrame:
+    """Download one MCMIPC file, extract all 16 bands for every plant.
+
+    plants must have columns: facility_id, latitude, longitude.
+    Returns one row per plant with band_01..band_16 columns.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".nc") as tmp:
+        fs.get(file_path, tmp.name)  # one bulk download serves all plants
+        ds = xr.open_dataset(tmp.name)
+        proj = make_goes_projection(ds)
+        h = ds["goes_imager_projection"].attrs["perspective_point_height"]
+
+        # Vectorized transform: all plants at once (pyproj accepts arrays)
+        x_m, y_m = proj(plants["longitude"].values, plants["latitude"].values)
+        x_rad, y_rad = x_m / h, y_m / h
+
+        # Vectorized nearest-pixel search:
+        # broadcasting (n_plants, 1) against (1, n_grid) -> argmin per plant
+        x_idx = np.abs(ds["x"].values[None, :] - x_rad[:, None]).argmin(axis=1)
+        y_idx = np.abs(ds["y"].values[None, :] - y_rad[:, None]).argmin(axis=1)
+
+        out = {"facility_id": plants["facility_id"].values}
+        for b in range(1, 17):
+            # Fancy indexing: pairs (y_idx[i], x_idx[i]) -> one pixel per plant
+            out[f"band_{b:02d}"] = ds[f"CMI_C{b:02d}"].values[y_idx, x_idx]
+        ds.close()
+        return pd.DataFrame(out)
