@@ -188,8 +188,6 @@ data/raw/ goes16_test/
 
 ## Tuesday 25/08/2026
 
-## Tuesday 26/08/2026
-
 - [x] Sub-Phase 2.2: single plant-day extraction validated (W A Parish 16×24
       matrix, physics checks: diurnal arc, water-vapor band ordering, thermal lag)
 - [x] Sub-Phase 2.3: batched resumable extractor (one file open serves all
@@ -200,3 +198,41 @@ data/raw/ goes16_test/
       Colab run: 3,251 done + 12 missing (GOES outages) + 0 failed in 81 min,
       4 processes (ProcessPoolExecutor after HDF5 thread-safety segfault
       with threads). Cache: 3,252 parquets, merged locally.
+
+## Thursday 27/08/2026
+
+- [x] Sub-Phase 2.5: consolidation + quality checks (notebook 09)
+      DELIVERABLE: data/processed/dynamic_features.parquet — 3,765,312 rows
+      (1,158 plants × 136 days × 24h − 12 missing scan-hours), sorted by
+      facility/date/hour, snappy compression.
+
+      COMPLETENESS (file level): 98.5% of plant-days have all 24 hours. The 12
+      missing scan-hours = exactly 2 GOES-16 outages — 2021-04-29 H21-H22 and
+      2022-09-13 H11-H20 — matching the extraction log.
+
+      MASKED PIXELS (value level): ~0.4-0.5% NULLs per band. (Note: pandas NaN
+      becomes Parquet NULL via pyarro) Two causes: (i) six whole-scan masked events (2021-05-18 H14,
+      2022-04-25 H22, 2022-04-26 H19-H20, 2022-09-27 H12+H18); (ii) recurring
+      H05 UTC masking on early-April/early-September dates — satellite local
+      midnight during geostationary eclipse seasons (solar-intrusion QC
+      masking). No chronic bad-pixel plants (max 34 rows/plant, all 1,158
+      affected uniformly) → no plant exclusions.
+
+      LABEL COVERAGE (period-filtered): 90,261 labeled plant-days in-period,
+      100% with satellite data, 88,795 with full 24h. Per-period vs paper:
+      P1 28,838/20,306 (1.42) · P2 21,696/14,464 (1.50) · P3 17,607/11,213
+      (1.57) · P4 20,654/15,243 (1.35) — uniform ratios, consistent with the
+      documented plant-universe surplus from Phase 1.
+
+      GAP RULE (applied at Phase 3 matrix assembly; this parquet stays raw):
+      per (facility, date, band), absent values = missing hours + NULLs.
+      ≤2 absent → linear interpolation along the hour axis (nearest-value fill
+      at day boundaries); >2 → drop the plant-day.
+      Effect: 2021-04-29 kept (2h bridge); 2022-09-13 dropped (779 labeled
+      samples); 261 plant-days with 3 NULL hours dropped (~150 labeled); all
+      other events interpolated. Estimated usable samples ≈ 89.3K (paper:
+      61,226).
+
+      DEVIATION LOG: the paper's periods sit in the same eclipse seasons and
+      faced the same masked hours and outages; it documents no gap handling.
+      This rule is an explicit interpretation.
