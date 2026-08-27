@@ -236,3 +236,14 @@ data/raw/ goes16_test/
       DEVIATION LOG: the paper's periods sit in the same eclipse seasons and
       faced the same masked hours and outages; it documents no gap handling.
       This rule is an explicit interpretation.
+
+- [x] Sub-Phase 2.6: dynamic features EDA (notebook 10)
+      Distributions: reflectance bimodal (night mass at 0), thermals 250-310 K.
+      Fleet diurnal cycle consistent with single-plant physics across 4 time zones.
+      April/September shift measurable in window + water-vapor bands. Window thermals near-collinear (r>0.95):
+      ~16 bands ≪ 16 independent signals. Naive band_07 vs CO2 correlation:
+      r = -0.05 — the univariate baseline the model must beat.
+
+## PHASE 2 COMPLETE
+
+Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants × 136 days × 24 h × 16 bands, QC'd, gap rule documented).
