@@ -16,6 +16,8 @@ import time
 import requests
 from loguru import logger
 import xarray as xr
+import rasterio
+from pyproj import Transformer
 
 # Paper's constants (section 2.1.3) — keep verbatim for replication
 SAT_LON_DEG = -75.2
@@ -129,4 +131,25 @@ def extract_edgar_at_plants(
         method="nearest",
     ).values.astype(float)
     ds.close()
+    return vals
+
+
+def extract_raster_at_plants(tif_path, statics: pd.DataFrame) -> np.ndarray:
+    """Value of the raster cell containing each plant.
+
+    Handles rasters in any CRS: plant lon/lat (EPSG:4326) are transformed
+    into the raster's CRS before sampling (e.g. ESRI:54009 Mollweide for
+    the Chen et al. 2022 consumption grid).
+    """
+    with rasterio.open(tif_path) as src:
+        if src.crs and src.crs.to_string() != "EPSG:4326":
+            transformer = Transformer.from_crs("EPSG:4326", src.crs, always_xy=True)
+            xs, ys = transformer.transform(
+                statics["longitude"].values, statics["latitude"].values
+            )
+        else:
+            xs, ys = statics["longitude"].values, statics["latitude"].values
+        vals = np.array([v[0] for v in src.sample(zip(xs, ys))], dtype=float)
+        if src.nodata is not None:
+            vals[vals == src.nodata] = np.nan
     return vals
