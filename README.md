@@ -288,3 +288,6 @@ Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants �
       treated as complementary neighborhood proxies.
       static_features.parquet complete: 1,158 facilities × 11 features,
       matching paper Table 3.
+
+- [x] Coastal-NaN correction: 57 plants' 1-km cells fell on water (nodata) — mostly
+      coastal FL/Gulf sites whose neighborhoods are urban, not dark. Filled with the mean of the surrounding 3×3 km block (land-side cells); 51 plants with all-water neighborhoods zero-filled. Turkey Point / Riviera Beach verified: now show urban-scale values. EDGAR cross-check updated: r = 0.237 (was 0.218). Saturation note: identical top values across major city cores (9.3958e6) reflect DMSP-style sensor saturation inherited by the Chen product — the feature is quantized with an urban plateau; documented as a substitute-product limitation.

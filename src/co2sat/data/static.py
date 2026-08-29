@@ -153,3 +153,25 @@ def extract_raster_at_plants(tif_path, statics: pd.DataFrame) -> np.ndarray:
         if src.nodata is not None:
             vals[vals == src.nodata] = np.nan
     return vals
+
+
+def fill_coastal_nan_3x3(tif_path, statics, col="consumption_surround"):
+    nan_mask = statics[col].isna()
+    if not nan_mask.any():
+        return statics
+    sub = statics.loc[nan_mask].copy()
+    shifts = [-0.01, 0.0, 0.01]  # ~1 km in degrees at these latitudes
+    stacks = []
+    for dlat in shifts:
+        for dlon in shifts:
+            shifted = sub.copy()
+            shifted["latitude"] = sub["latitude"] + dlat
+            shifted["longitude"] = sub["longitude"] + dlon
+            stacks.append(extract_raster_at_plants(tif_path, shifted))
+    grid = np.vstack(stacks)  # (9, n_nan)
+    fill = np.nanmean(grid, axis=0)  # ignores water cells
+    statics.loc[nan_mask, col] = fill
+    remaining = statics[col].isna().sum()
+    statics[col] = statics[col].fillna(0)  # truly dark/offshore leftovers
+    print(f"3x3-filled {nan_mask.sum() - remaining}, zero-filled {remaining}")
+    return statics
