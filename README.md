@@ -296,5 +296,5 @@ Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants �
       (terrain, zenith sweep, urban hotspots ×2). Correlations structurally
       sensible (coal↔gas anti-correlated, lon↔zenith geometric, EDGAR↔
       consumption 0.22). Positive control: capacity vs mean daily CO2
-      r(log-log) = [X], coal plants above trend — static features carry
+      r(log-log) = 0.85, coal plants above trend — static features carry
       strong signal vs band_07 univariate r ≈ -0.05.
