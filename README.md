@@ -298,3 +298,29 @@ Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants �
       consumption 0.22). Positive control: capacity vs mean daily CO2
       r(log-log) = 0.85, coal plants above trend — static features carry
       strong signal vs band_07 univariate r ≈ -0.05.
+- [x] Session 6: final assembly — scripts/build_training_data.py
+      Gap rule applied (NULL-aware, unified over missing hours + masked
+      pixels): 935 plant-days dropped (779 = 2022-09-13 outage date;
+      156 = labeled share of the 261 three-NULL-hour days), N = 89,326
+      samples kept (paper: 61,226; ratio 1.46, consistent with the
+      documented plant-universe surplus). Labeled universe: 1,129 facilities.
+      Split (paper protocol, seed 42): P1 1,038 plants -> 830 train / 208 val;
+      samples 23,832 / 5,693 / 59,801 (train/val/test, P2-P4 all test).
+
+## PHASE 3 COMPLETE
+
+Deliverable: model-ready arrays (N, 16, 24) + (N, 11) + (N, 2),
+split assignment, and train-only normalization statistics.
+Deviation log to date:
+
+(1) plant universe,
+
+(2) MCMIPC product choice,
+
+(3) gap rule,
+
+(4) EDGAR 'surrounding' = containing cell (3x3 r=0.78),
+
+(5) Hu->Chen consumption substitution,
+
+(6) Mapzen->EPQS altitude.
