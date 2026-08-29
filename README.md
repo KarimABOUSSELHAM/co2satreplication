@@ -268,10 +268,23 @@ Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants �
       plants ≈ 0 m as expected. Merged into static_features.parquet.
 
 - [x] Phase 3 Session 3: EDGAR surroundings
-       Source: EDGAR v8.0 [35], CO2 excl. short-cycle, sector TOTALS, year 2021,
+      Source: EDGAR v8.0 [35], CO2 excl. short-cycle, sector TOTALS, year 2021,
       annual gridmap 0.1° (ton/cell/yr). Extraction: containing-cell value
       (paper leaves 'surrounding' unquantified — interpretation documented;
       3×3-window robustness: r = [0,78]). Self-inclusion note: EDGAR cells contain
       the plants' own inventoried point-source emissions — feature partly
       encodes typical plant magnitude; replicated as-is (paper could not
       exclude it either).
+
+- [x] Session 4: consumption surroundings
+      Source substitution (deviation log #5): paper cites Hu et al. 2022 [34]
+      (nightlight-derived global EPC 1992-2019); no public deposit exists → Chen et al. 2022 (Sci Data, figshare 17004523) substituted: same phenomenon (1 km gridded electricity consumption from calibrated nightlights, 1992-2019). Year 2019 used (latest available = closest to study period). Raster in ESRI:54009 (Mollweide); plant coordinates transformed via pyproj (always_xy)
+      before sampling — probed against known city centers (Houston,
+      Manhattan, Chicago >> rural Nevada/Texas/Montana ≈ 0) and top/bottom
+      plant rankings (urban vs rural as expected). Containing 1-km cell;
+      dark/nodata cells filled with 0 (nightlight-dark = negligible local
+      consumption). Cross-check vs EDGAR feature: r(log-log) = 0.22 — weak value, explained by the ~100:1 cell-area mismatch (0.1° vs
+      1 km) and EDGAR's point-source self-inclusion; the two features are
+      treated as complementary neighborhood proxies.
+      static_features.parquet complete: 1,158 facilities × 11 features,
+      matching paper Table 3.
