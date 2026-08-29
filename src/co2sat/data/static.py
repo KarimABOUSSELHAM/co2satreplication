@@ -7,16 +7,22 @@ surroundings, Hu et al. 2022 consumption surroundings.
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Mapping, Union, Iterable
 from pandas.api.extensions import ExtensionArray
 from numpy.typing import ArrayLike
 import numpy as np
 import pandas as pd
+import time
+import requests
+from loguru import logger
+import xarray as xr
 
 # Paper's constants (section 2.1.3) — keep verbatim for replication
 SAT_LON_DEG = -75.2
 R_EARTH_KM = 6370.0
 R_SAT_KM = 42156.0
+# EPQS API for elevation (meters) at lat/lon; see https://epqs.nationalmap.gov/FAQ.html
+EPQS_URL = "https://epqs.nationalmap.gov/v1/json"
 
 
 def satellite_zenith_angle(
@@ -59,3 +65,68 @@ def build_epa_statics(epa_parquet_path) -> pd.DataFrame:
         df["latitude"].values, df["longitude"].values
     )
     return df
+
+
+ParamsType = Mapping[
+    str,
+    Union[str, bytes, int, float, Iterable[str | bytes | int | float] | None],
+]
+
+
+def fetch_altitude_epqs(lat: float, lon: float, retries: int = 3) -> float | None:
+    params: ParamsType = {
+        "x": lon,
+        "y": lat,
+        "units": "Meters",
+        "wkid": 4326,
+    }
+
+    for attempt in range(retries):
+        try:
+            r = requests.get(EPQS_URL, params=params, timeout=15)
+            r.raise_for_status()
+            return float(r.json()["value"])
+        except (requests.RequestException, ValueError, KeyError) as e:
+            logger.warning(f"EPQS attempt {attempt + 1} failed ({lat},{lon}): {e}")
+            time.sleep(2 * (attempt + 1))
+    return None
+
+
+def extract_edgar_at_plants(
+    nc_path,
+    statics: pd.DataFrame,
+    year: int = 2021,
+) -> np.ndarray:
+    """EDGAR value of the 0.1-deg cell containing each plant.
+
+    'Surrounding' interpretation: containing cell (paper leaves it
+    unquantified — deviation log #4). Handles 0-360 lon and corner
+    registration automatically.
+    """
+    ds = xr.open_dataset(nc_path)
+    var = list(ds.data_vars)[0]
+    da = ds[var]
+
+    # Time handling: full-timeseries file -> select the chosen year
+    if "time" in da.dims:
+        da = da.sel(time=str(year)).squeeze()
+        if "time" in da.dims:  # monthly within the year
+            da = da.sum("time")  # ton/cell/month -> ton/cell/year
+
+    # Corner-registered coordinates -> shift to centers
+    lon0 = float(da["lon"].values[0])
+    if abs((lon0 * 10) % 1) < 1e-6:  # .0 decimals => corners
+        da = da.assign_coords(lon=da["lon"].values + 0.05, lat=da["lat"].values + 0.05)
+
+    # Longitude wrap
+    lons = np.asarray(statics["longitude"].values, dtype=float)
+    if float(da["lon"].max()) > 180:
+        lons = lons % 360
+
+    vals = da.sel(
+        lat=xr.DataArray(statics["latitude"].values, dims="p"),
+        lon=xr.DataArray(lons, dims="p"),
+        method="nearest",
+    ).values.astype(float)
+    ds.close()
+    return vals

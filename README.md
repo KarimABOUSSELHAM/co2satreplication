@@ -247,3 +247,31 @@ data/raw/ goes16_test/
 ## PHASE 2 COMPLETE
 
 Deliverable: data/processed/dynamic_features.parquet (3.77M rows, 1.158 plants × 136 days × 24 h × 16 bands, QC'd, gap rule documented).
+
+## Saturday 29/08/2026 — Phase 3: Static Features
+
+- [x] Session 1: satellite zenith angle + EPA statics assembly
+      Zenith angle implemented per paper eqs (1)-(3) with paper constants
+      (SatLon=-75.2°, R=6370 km, r=42156 km — paper's values kept verbatim).
+      Verified against an independent implementation: W A Parish = 41.033°,
+      Miami 30.668°, Denver 55.245°, Seattle 70.885°; 5 tests passing incl.
+      subsatellite zero, east-west symmetry, vectorization consistency.
+      static_features.parquet created including: 1,158 facilities × 9 cols (capacity,lat/lon, 4 fuel ratios, zenith). QC gates: 0 NaN, fuel ratios sum to 1, all facilities within CONUS bounds. Zenith gradient map exported
+      (smooth SE→NW sweep confirms geometry).
+
+- [x] Session 2: altitude
+      Source substitution (deviation log): paper cites Mapzen terrain tiles
+      [33]; Mapzen is defunct → USGS EPQS point queries (both SRTM-derived;
+      differences at plant coordinates negligible vs 2-km satellite pixels).
+      1,158 point queries via resumable cache (data/interim/altitude_cache.
+      parquet). QC: 0 missing after retries, range [min] to [max] m, coastal
+      plants ≈ 0 m as expected. Merged into static_features.parquet.
+
+- [x] Phase 3 Session 3: EDGAR surroundings
+       Source: EDGAR v8.0 [35], CO2 excl. short-cycle, sector TOTALS, year 2021,
+      annual gridmap 0.1° (ton/cell/yr). Extraction: containing-cell value
+      (paper leaves 'surrounding' unquantified — interpretation documented;
+      3×3-window robustness: r = [0,78]). Self-inclusion note: EDGAR cells contain
+      the plants' own inventoried point-source emissions — feature partly
+      encodes typical plant magnitude; replicated as-is (paper could not
+      exclude it either).
