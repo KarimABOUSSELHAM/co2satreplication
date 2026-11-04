@@ -324,3 +324,98 @@ Deviation log to date:
 (5) Hu->Chen consumption substitution,
 
 (6) Mapzen->EPQS altitude.
+
+## Wednesday 04/11/2026 — Phase 4: replica trained, audited, and its blind spot found
+
+### Setup
+
+- [x] Training moved to GPU: Lenovo Legion 5 Pro, RTX 4060 Laptop, WSL2.
+      PyTorch 2.14.1+cu126 (driver supports CUDA 12.6; `explicit = true`
+      index in pyproject so only `torch` comes from the PyTorch index).
+      One epoch = 3-4 s; a full run stops at epoch 21-23 (< 2 min).
+- [x] `train_model.py --seed`; 5 seeds (42-46) for every reported result.
+
+### Data incident found and fixed (pipeline, not paper)
+
+- [x] EPA daily emissions were counted TWICE: `data/raw/epa_daily/` held
+      both the per-state files (98) and the national quarterly files (8)
+      published by CAMPD with the same rows. 100 % of unit-days duplicated,
+      so daily CO2 and gross load were exactly x2 for every plant.
+      Fix: `consolidate_epa_daily.py` reads state files only (regex) and
+      asserts no duplicated (facility, unit, date). Rebuilt Phase 1 + final
+      assembly; satellite and static features untouched.
+      Impact: scale-free metrics (R2, MAPE, WAPE, relative bias) and the
+      trained network itself unchanged (z-scored targets); RMSE, MAE and
+      tonnage biases halved. Detected by a physical check (output above
+      100 % of capacity on most days for 650/1,129 plants).
+
+### Replication result (5 seeds, after fix)
+
+| Plant-level daily R2  | CO2 P2        | CO2 P3        | CO2 P4        | Load P2       | Load P3       | Load P4       |
+| --------------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
+| Mo et al. (published) | 0.71          | 0.60          | 0.63          | 0.60          | 0.44          | 0.53          |
+| Replica (mean ± sd)   | 0.708 ± 0.015 | 0.667 ± 0.006 | 0.672 ± 0.011 | 0.648 ± 0.013 | 0.567 ± 0.008 | 0.613 ± 0.012 |
+
+- MAPE (paper definition: one period-mean per plant) on a size-matched
+  universe (mean CO2 >= 1,500 t/day -> 602 / 523 / 606 plants vs paper
+  590 / 513 / 592): 0.32 / 0.44 / 0.35 vs published 0.44 / 0.61 / 0.44.
+- RMSE seed 42: about 4,400 / 3,900 / 4,200 t/day vs published
+  5,267 / 5,295 / 5,439.
+- Verdict: the replica matches or beats the reference on its three metrics.
+
+### What the published metrics do not show
+
+- [x] Simple baselines (`scripts/baselines.py`), plant-level daily R2 CO2:
+      capacity x fuel rate (no satellite) 0.702 / 0.596 / 0.638;
+      CatBoost static only 0.696 / 0.706 / 0.687;
+      CatBoost static + band statistics 0.683 / 0.694 / 0.674;
+      plant P1 history 0.740 / 0.766 / 0.725.
+      The reference R2 is reachable without any satellite input.
+- [x] Within-plant skill (`scripts/diagnose_within.py`): after removing each
+      plant's period mean, within-plant R2 <= 0.004 and median correlation
+      0.01-0.07 for all seeds. The model does not track daily activity.
+- [x] Seasonal bias: national relative bias CO2 = -16.5 % (Sept 2021),
+      +1.4 % (Apr 2022), -14.4 % (Sept 2022), mean of 5 seeds; the
+      September-minus-April gap is stable across seeds (about -18 and -16
+      points). Same pattern for all baselines: the satellite does not
+      capture the warm-season rise in activity.
+- [x] Seen vs never-seen plants: similar R2; WAPE 2-5 points worse on
+      never-seen plants.
+- [x] Dataset variants (`build_training_data.py --include-off-days`,
+      `--align-local`, `--reuse-split-from model_base`): 63,301 off days
+      re-included and/or satellite hours re-indexed on the EPA local day.
+      Within-plant R2 stays <= 0.003 in all variants.
+- [x] Raw-signal control, no model (`scripts/onoff_raw_signal.py`):
+      running vs off days, standardized effect size per band, with random
+      (SHUF) and time-shifted (CIRC) chance controls; 2,278 plant-periods.
+      Coal plants >= 500 MW (161): median signed effect -0.04 to +0.06 on
+      all bands (band 7, 3.9 um: 0.02); absolute effects 0.32-0.43 vs CIRC
+      0.30-0.36. No consistent thermal signature of plant shutdown.
+- [x] Pixel location check (`scripts/check_pixel_location.py`, scan
+      2021-04-22 18 UTC): pixel centre 1.32 km (Roxboro), 1.27 km
+      (W A Parish), 0.12 km (Powerton) from EPA coordinates; coordinates
+      confirmed on imagery. Extraction validated. Possible plume in the
+      pixel next to Powerton (single image, anecdotal).
+      Figure: `figures/pixel_check_20210422_18.png`.
+
+### Conclusion of the day
+
+In the reference configuration (one 2 km GOES-16 pixel per plant), the
+satellite carries no measurable information on plant activity; the model
+estimates plant size. Windowed extraction (neighbouring pixels) scripted
+but not run: kept as a stated limitation / future work.
+Next: deviation log update; note to supervisor with two options for
+Article 1 (critical replication + evaluation protocol, or sensor change to
+TROPOMI NO2).
+
+### Deviation log — additions (renumber after the existing entries)
+
+| #        | Aspect                          | Paper                                 | Replication choice                           | Measured impact                                                                                                                                                                       |
+| -------- | ------------------------------- | ------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-a      | Off days (CO2 = 0 and load = 0) | Not specified ("records of both")     | Excluded (> 0 filter)                        | Re-including 63,301 off days: plant R2 0.64 / 0.56 / 0.58; within-plant skill still nil                                                                                               |
+| D-b      | Satellite day vs EPA day        | Not specified                         | UTC day (EPA: local standard day)            | Local-day alignment: no change in within-plant skill                                                                                                                                  |
+| D-c      | Plant universe filter           | Undocumented (590 / 513 / 592 plants) | Broader (1,066 / 986 / 1,045)                | MAPE driven by small plants (1.8-3.7 all plants vs 0.32-0.44 on a size-matched universe); WAPE stable                                                                                 |
+| D-d      | Plant capacity                  | EPA facility attributes               | Sum of EPA "associated generators" nameplate | Under-estimated for a few plants (output > 110 % of capacity on most days, e.g. 54149, 50625, 7697; likely combined-cycle steam turbines not listed); impact to quantify by exclusion |
+| D-e      | Number of training runs         | One run reported                      | 5 seeds, mean ± sd                           | sd of plant R2 0.006-0.015; national bias sd about 5 points                                                                                                                           |
+| D-f      | Early stopping outcome          | Not reported                          | Patience 20 on validation loss               | Best epoch 1-3 for every seed: validation loss rises once the model starts fitting training plants                                                                                    |
+| Incident | EPA daily files                 | —                                     | State + quarterly files both read (fixed)    | Targets x2 before fix; scale-free metrics unchanged                                                                                                                                   |
