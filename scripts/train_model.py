@@ -89,6 +89,12 @@ def main() -> None:
     ap.add_argument("--patience", type=int, default=20)
     ap.add_argument("--num-workers", type=int, default=2)
     ap.add_argument(
+        "--seed",
+        type=int,
+        default=SEED,
+        help="random seed for weights init and shuffling",
+    )
+    ap.add_argument(
         "--bands",
         default=None,
         help="comma-separated 1-based ABI band numbers to keep (ablations), "
@@ -96,7 +102,8 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    set_seed()
+    set_seed(args.seed)
+    logger.info(f"seed {args.seed}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     band_idx = [int(b) - 1 for b in args.bands.split(",")] if args.bands else None
     X_dyn, X_stat, y, samples = load_normalized(band_idx)
@@ -180,7 +187,7 @@ def main() -> None:
     (out_dir / "run_config.json").write_text(
         json.dumps(
             {
-                "seed": SEED,
+                "seed": args.seed,
                 "run_name": args.run_name,
                 "n_bands": n_bands,
                 "bands_1based": args.bands,
