@@ -22,7 +22,7 @@ from loguru import logger
 
 from co2sat.utils import data_dir
 
-THRESHOLDS_T_PER_DAY = [0, 10, 50, 100, 250, 500, 1000, 2000, 3000]
+THRESHOLDS_T_PER_DAY = [0, 10, 50, 100, 250, 500, 1000, 1500, 2000, 3000]
 PAPER_N_PLANTS = {"P2": 590, "P3": 513, "P4": 592}
 
 
