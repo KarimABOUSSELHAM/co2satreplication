@@ -1,9 +1,13 @@
 import pandas as pd
 from loguru import logger
 from pathlib import Path
+import re
 
 # Conversion: EPA reports CO2 in short tons; paper uses metric tons
 SHORT_TON_TO_METRIC = 0.90718474
+# EPA publishes the same daily data twice: one file per state and year, and one
+# national file per quarter. Keep ONLY the state files, or every row is counted twice.
+STATE_FILE = re.compile(r"emissions-daily-\d{4}-(?!q[1-4]\b)[a-z]{2}\.csv$")
 
 # These column names match EPA's daily emissions CSV format
 # Verify by reading one file's header before relying on them
@@ -14,6 +18,7 @@ COLS_FROM_EPA = {
     "Gross Load (MWh)": "gross_load_mwh",
     "CO2 Mass (short tons)": "co2_short_tons",
     "Primary Fuel Type": "primary_fuel_type",
+    "Unit ID": "unit_id",
 }
 
 
@@ -29,12 +34,17 @@ def load_daily_csv(path: Path) -> pd.DataFrame:
 
 def consolidate_daily(raw_dir: Path, output_path: Path) -> pd.DataFrame:
     frames = []
-    for csv_path in sorted(raw_dir.glob("*.csv")):
+    for csv_path in sorted(
+        p for p in raw_dir.glob("*.csv") if STATE_FILE.search(p.name)
+    ):
         logger.info(f"Reading {csv_path.name}")
         df = load_daily_csv(csv_path)
         frames.append(df)
 
     full = pd.concat(frames, ignore_index=True)
+    n_dup = full.duplicated(["facility_id", "unit_id", "date"]).sum()
+    assert n_dup == 0, f"{n_dup} duplicated unit-days: check the raw files"
+    logger.info(f"{len(frames)} state files, {len(full):,} unit-days, no duplicates")
     full["co2_metric_tons"] = full["co2_short_tons"] * SHORT_TON_TO_METRIC
 
     # Aggregate to facility-day level
