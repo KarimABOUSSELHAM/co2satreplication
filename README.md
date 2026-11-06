@@ -1,4 +1,12 @@
-# Data needed from the paper
+# co2satreplication — replication of Mo et al. (_Energy_, 2025)
+
+> **Status: closed on 06/11/2026.** The replication is complete and audited
+> (Phases 1–4). The framing tests for Article 1 (05–06/11/2026) were run from
+> this repository and are logged below. Findings in one place:
+> [Repository closure](#repository-closure-06112026). Work on Article 1
+> continues in a separate repository.
+
+## Data needed from the paper
 
 You only need one source of ground-truth data: daily CO₂ emissions and gross load per plant, for all 1303 plants in the contiguous US, across the four study periods.
 
@@ -37,7 +45,7 @@ samples and the model methodology is independent of dataset size. Evaluation met
 
 ## Sunday 31/05/2026
 
-[ ] Closing out phase 1 of the project
+[x] Closing out phase 1 of the project
 
 - [x] Build the facility attributes used in the paper and extracted from EPA
   - Step 1: Find the Facility files in the listing - In a separate notebook called `facilities` explore what a `Facility` file looks like
@@ -72,9 +80,9 @@ Our resulting valid plant counts per period after joining the EPA attributes of 
 
 ## Tuesday 02/06/2026
 
-[ ] Starting phase 2 of the project: GOES-16 Satellite Pipeline. The ultimate goal of this phase is to produce a dynamical feature matrix of size 16 × 24 of spectral bands for each facility of the previous phase.
+[x] Starting phase 2 of the project: GOES-16 Satellite Pipeline. The ultimate goal of this phase is to produce a dynamical feature matrix of size 16 × 24 of spectral bands for each facility of the previous phase.
 
-- [ ] Extract one pixel from one file and start understanding the data
+- [x] Extract one pixel from one file and start understanding the data
   - [x] AWS CLI Anonymous Access to S3 bucket of satellite data:
         The good news are GOES16 data can be accessed from aws s3 without having an account in aws; just from the cli. This is why `awscli` should be installed.
         The paper collected data from Advanced Baseline Imager : This is the primary instrument on the GOES-R Series for imaging Earth’s weather, ocean and environment.
@@ -184,7 +192,7 @@ data/raw/ goes16_test/
       GOES16 is geostationary satellite, which means to extract a pixel at a specific (lat, lon), you need to convert that lat/lon to (x,y) and each pixel corresponds to a fixed (x,y) coordinate.
       The transformation formulae are specified in section 5.1.2.8 of [volume 3 GOES R SERIES PRODUCT DEFINITION AND USERS’ GUIDE (PUG)](https://www.goes-r.gov/users/docs/PUG-L1b-vol3.pdf). Python library called `pyproj` is used in order to use these formulae
       Example of transformation is displayed in notebook `07_coordinates_transformation.ipynb`
-- [ ] Convert all images to html files in order to upload notebooks to github with ease
+- [x] Convert all images to html files in order to upload notebooks to github with ease
 
 ## Tuesday 25/08/2026
 
@@ -419,3 +427,96 @@ TROPOMI NO2).
 | D-e      | Number of training runs         | One run reported                      | 5 seeds, mean ± sd                           | sd of plant R2 0.006-0.015; national bias sd about 5 points                                                                                                                           |
 | D-f      | Early stopping outcome          | Not reported                          | Patience 20 on validation loss               | Best epoch 1-3 for every seed: validation loss rises once the model starts fitting training plants                                                                                    |
 | Incident | EPA daily files                 | —                                     | State + quarterly files both read (fixed)    | Targets x2 before fix; scale-free metrics unchanged                                                                                                                                   |
+
+## Thursday 05/11/2026 — Framing tests for Article 1
+
+Each direction was tested with a criterion written before computing, and
+compared with the strongest simple rule (persistence, pro-rata, base rate).
+
+| Direction tested                              | Data                                        | Script                                                    | Result                                                                                                                                                    | Verdict               |
+| --------------------------------------------- | ------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| Plant-level estimation from system totals     | EPA, 47 states                              | `identifiability_audit.py`, `identifiability_audit_v2.py` | Within-plant R2: pro-rata 0.13–0.27; hard merit order −0.55 to −1.07; soft merit order = pro-rata; CatBoost on never-seen states 0.03–0.05                | Closed                |
+| Which plants to measure                       | EPA                                         | `monitoring_design.py`                                    | Greedy saves 26 / 21 / 9 % of plants vs largest-first for 30 / 20 / 10 % error                                                                            | Closed (trivial)      |
+| Delivery of announced projects                | LBNL _Queued Up_, 15,689 projects 2005–2018 | `delivery_test.py`                                        | Temporal: Brier +16 %, within-cell AUC 0.655, base rate overpredicts built MW ×1.9; cold spatial transfer −3 %; needs > 200 local projects (Morocco ≈ 10) | Closed for Morocco    |
+| Capacity target → emissions leak              | Ember, 125 countries                        | `leak_test.py`                                            | ML vs persistence +16 % (fossil share), +13 % (intensity); Morocco: RE 45 % of capacity but 23 % of generation (2025)                                     | Grey zone; motivation |
+| Demand uncertainty learned on the world panel | Ember, 164 countries                        | `conformal_demand_test.py`                                | CQR coverage 90.1 % (unseen countries) / 87.1 % (temporal), width ×0.70 / ×0.65 vs naive; Africa covered only with similarity weights                     | **Go**                |
+
+## Friday 06/11/2026 — Block 0: TROPOMI NO2 as a plant-activity tracer
+
+Sentinel-5P TROPOMI L3 NO2 (Google Earth Engine), daily windows of 1 / 5 / 10 km
+around each plant, ring background 10–30 km. Scripts: `extract_tropomi.py`,
+`tropomi_signal_test.py`, `extract_tropomi_ma.py`, `tropomi_ma_events.py`.
+Criterion fixed in advance: go if the median monthly within-plant R2 of coal
+plants >= 500 MW is >= 0.3; no-go if < 0.1.
+
+**United States (1,151 EPA plants, 2021, clear sky).** Median monthly
+within-plant R2, coal >= 500 MW:
+
+| Variant                           | R2    |
+| --------------------------------- | ----- |
+| Window mean                       | 0.051 |
+| Window max                        | 0.054 |
+| Max, isolated plants (30 km)      | 0.075 |
+| Max, isolated, background removed | 0.065 |
+
+No-go. The signal exists where conditions allow it: in the cleanest
+background tercile, median monthly r = 0.37, 22–28 % of plants reach
+R2 >= 0.3, best r = 0.8. Negative correlations for gas plants reflect the
+seasonal cycle of the regional background.
+
+**Morocco (six thermal sites, 2019–2025).** Natural experiment: the Algerian
+gas cut (pipeline closed 31/10/2021, LNG reverse flow from Spain from June
+2022). Change of the NO2 enhancement in Nov 2021 – May 2022 vs the same months
+one year before and after. Criterion: gas sites drop >= 50 %.
+
+| Site            | Fuel           | Change |
+| --------------- | -------------- | ------ |
+| Tahaddart       | gas            | +1 %   |
+| Ain Beni Mathar | gas            | −20 %  |
+| Kenitra         | gas / fuel oil | +65 %  |
+| Mohammedia      | fuel oil / gas | +38 %  |
+| Safi            | coal           | +27 %  |
+| Jorf Lasfar     | coal           | +13 %  |
+
+No-go: the satellite sees the compensation by fuel oil and coal better than
+the gas shutdown. Jorf Lasfar is a strong visible source, mixed with the
+adjacent OCP complex. Safi (ultra-supercritical, 2018) is weak despite
+1.4 GW; flue-gas treatment is likely but undocumented. Figure:
+`figures/tropomi_ma_sites.png`. Site coordinates checked on imagery
+(`data/raw/morocco_thermal_sites.csv`).
+
+Errors fixed on the way: days with no scene (image without bands) in the
+Earth Engine export; trailing empty line in the sites file; first event
+window wrong (12 months instead of the actual 7).
+
+## Repository closure (06/11/2026)
+
+**What this repository contains.** A full replication of Mo et al. (2025):
+EPA CAMPD ground truth (Phase 1), GOES-16 ABI extraction for 1,151 plants
+(Phase 2), static features (Phase 3), CNN-BiLSTM-Attention replica trained on
+5 seeds and audited (Phase 4), plus the framing tests of 05–06/11/2026.
+
+**Main findings.**
+
+1. The published metrics are reproduced, and matched or beaten.
+2. They are reachable without any satellite input (capacity × fuel rate:
+   plant R2 0.60–0.70). Within-plant R2 is <= 0.004: in the reference
+   configuration (one 2 km GOES-16 pixel per plant), the satellite carries
+   no measurable information on daily plant activity; the model estimates
+   plant size. Raw-signal and permutation tests confirm it.
+3. A change of sensor (TROPOMI NO2) does not rescue plant-level monthly
+   activity in general (median within-plant R2 0.05–0.075), but works under
+   identifiable conditions (clean background, isolated, variable output).
+4. Plant-level allocation from system totals is not identifiable beyond
+   pro-rata; the target for Article 1 becomes hourly generation by fuel at
+   system level.
+
+**What continues elsewhere.** Article 1 (hourly generation and emissions of
+grids that publish no operational data, validated on masked countries and
+applied to Morocco) is developed in a separate repository. The deviation
+log, scripts and figures of this repository remain the reference for the
+replication.
+
+**Not versioned.** Raw and processed data (`data/`, ignored), CatBoost
+training logs (`catboost_info/`, ignored from 06/11/2026). Every dataset is
+re-downloadable with the scripts in `scripts/`.
