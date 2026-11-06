@@ -1,0 +1,8 @@
+site_id,name,fuel,capacity_mw,latitude,longitude,note
+1,Jorf Lasfar (JLEC),coal,2056,33.1050,-8.6300,"Coastal; OCP chemical complex adjacent (NOx confounder). VERIFY on map"
+2,Safi (SAFIEC),coal,1386,32.148829551021514, -9.280037114102516,"Coastal; commissioned Dec 2018. VERIFY on map"
+3,Mohammedia,oil/gas,600,33.680951371894736, -7.431894128534765,"Coastal; SAMIR refinery adjacent (closed 2015). VERIFY on map"
+4,Kenitra,gas/oil,615,34.285982995005334, -6.56140867788564,"Near Mehdia; CCGT 2012. VERIFY on map"
+5,Tahaddart,gas,384,35.58938489314095, -5.987112006088203,"CCGT; Algerian gas cut Oct 2021. VERIFY on map"
+6,Ain Beni Mathar,gas,472,34.07004010851747, -2.1046295282288683,"ISCC (gas + solar); gas cut Oct 2021. VERIFY on map"
+,,,,,
